@@ -49,9 +49,10 @@ const Post = (): JSX.Element => {
   return (
     <div className="min-h-screen bg-gray-100 py-8">
       <section className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center animate-pulse">
-          GitHub Repositories
-        </h2>
+      <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center relative before:absolute before:bottom-0 before:h-1 before:w-48 before:left-1/2 before:-translate-x-1/2 before:bg-blue-500 before:rounded-full pb-2 hover:before:w-96 before:transition-all">
+  GitHub Repositories
+</h2>
+
         <ul className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {data.map((repo) => (
             <li
