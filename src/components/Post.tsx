@@ -3,6 +3,11 @@ import { getPost } from "../api/PostAPI";
 import { FaStar } from "react-icons/fa";
 import { GoIssueClosed } from "react-icons/go";
 import { BiTime } from "react-icons/bi";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+
+// Initialize the relative time plugin using dayjs package
+dayjs.extend(relativeTime);
 
 interface Repository {
   id: number;
@@ -30,20 +35,7 @@ const Post = (): JSX.Element => {
   }, []);
 
   const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const diffMonths = Math.floor(diffDays / 30);
-    const diffYears = Math.floor(diffDays / 365);
-
-    if (diffDays < 30) {
-      return `${diffDays} days ago`;
-    } else if (diffMonths < 12) {
-      return `${diffMonths} months ago`;
-    } else {
-      return `${diffYears} years ago`;
-    }
+    return dayjs(dateString).fromNow();
   };
 
   return (
@@ -51,9 +43,7 @@ const Post = (): JSX.Element => {
       <section className="container mx-auto px-4">
       <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center relative before:absolute before:bottom-0 before:h-1 before:w-48 before:left-1/2 before:-translate-x-1/2 before:bg-blue-500 before:rounded-full pb-2 hover:before:w-96 before:transition-all">
   GitHub Repositories
-</h2>
-
-        <ul className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+</h2>        <ul className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {data.map((repo) => (
             <li
               key={repo.id}
