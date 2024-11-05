@@ -5,8 +5,9 @@ import { GoIssueClosed } from "react-icons/go";
 import { BiTime } from "react-icons/bi";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { IoIosArrowBack } from "react-icons/io";
-import { IoIosArrowForward } from "react-icons/io";
+import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 dayjs.extend(relativeTime);
 
@@ -27,17 +28,20 @@ const Post = (): JSX.Element => {
   const [data, setData] = useState<Repository[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const itemsPerPage = 9;
-
   const getPostData = async (page: number): Promise<void> => {
-    const res = await getPost(page, itemsPerPage);
+    const res = await getPost({
+      page,
+      perPage: itemsPerPage,
+      startDate: selectedDate,
+    });
     setData(res.data.items);
     setTotalPages(Math.ceil(res.data.total_count / itemsPerPage));
   };
-
   useEffect(() => {
     getPostData(currentPage);
-  }, [currentPage]);
+  }, [currentPage, selectedDate]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -51,9 +55,25 @@ const Post = (): JSX.Element => {
   return (
     <div className="min-h-screen bg-gray-100 py-8">
       <section className="container mx-auto px-4">
-        <h2 className="text-3xl  font-bold text-gray-800 mb-8 text-center relative before:absolute before:bottom-0 before:h-1 before:w-48 before:left-1/2 before:-translate-x-1/2 before:bg-blue-500 before:rounded-full pb-2 hover:before:w-96 before:transition-all">
+        <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center relative before:absolute before:bottom-0 before:h-1 before:w-48 before:left-1/2 before:-translate-x-1/2 before:bg-blue-500 before:rounded-full pb-2 hover:before:w-96 before:transition-all">
           GitHub Repositories
-        </h2>{" "}
+        </h2>
+
+        <div className="flex justify-center mb-6">
+          <h2 className="text-xl font-semibold text-gray-700">Select :</h2>
+          <DatePicker
+            selected={selectedDate}
+            onChange={(date: Date | null) => {
+              if (date) {
+                setSelectedDate(date);
+                getPostData(currentPage);
+              }
+            }}
+            dateFormat="yyyy-MM-dd"
+            className="p-2 border rounded"
+          />
+        </div>
+
         <ul className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {data.map((repo) => (
             <li
@@ -97,28 +117,32 @@ const Post = (): JSX.Element => {
             </li>
           ))}
         </ul>
+
         <div className="mt-8 flex justify-center gap-2">
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
             className="px-4 py-2 rounded bg-blue-500 text-white disabled:bg-gray-300 hover:bg-blue-600 transition"
           >
-            <IoIosArrowBack/>
+            <IoIosArrowBack />
           </button>
 
-          {[...Array(Math.min(totalPages, 5))].map((_, index) => (
-            <button
-              key={index}
-              onClick={() => handlePageChange(index + 1)}
-              className={`px-4 py-2 rounded ${
-                currentPage === index + 1
-                  ? "bg-blue-500 text-white"
-                  : "bg-white text-blue-500 hover:bg-blue-100"
-              }`}
-            >
-              {index + 1}
-            </button>
-          ))}
+          {[...Array(totalPages)].map((_, index) => {
+            const pageNumber = index + 1;
+            return (
+              <button
+                key={index}
+                onClick={() => handlePageChange(pageNumber)}
+                className={`px-4 py-2 rounded ${
+                  currentPage === pageNumber
+                    ? "bg-blue-500 text-white"
+                    : "bg-white text-blue-500 hover:bg-blue-100"
+                }`}
+              >
+                {pageNumber}
+              </button>
+            );
+          })}
 
           <button
             onClick={() => handlePageChange(currentPage + 1)}

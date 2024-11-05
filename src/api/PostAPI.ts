@@ -1,14 +1,18 @@
 import axios from 'axios';
-import dayjs from 'dayjs';
-export const getPost = (page: number = 1, perPage: number = 9) => {
-    const referenceDate = dayjs('2017-10-22');
-    const formattedDate = referenceDate.format('YYYY-MM-DD');
-    const daysFromReference = dayjs().diff(referenceDate, 'days');
-    console.log(`Fetching repositories from ${daysFromReference} days ago`);
+import { formatDate } from '../utils/datepicker';
+
+interface PostParams {
+    page?: number;
+    perPage?: number;
+    startDate: Date;
+}
+
+export const getPost = ({ page = 1, perPage=25, startDate }: PostParams) => {
+    const formattedDate = formatDate(startDate);
 
     return axios.get(`https://api.github.com/search/repositories`, {
         params: {
-            q: `created:>${formattedDate}`,
+            q: `created:>${formattedDate} stars:>1000`,
             sort: 'stars',
             order: 'desc',
             page,
