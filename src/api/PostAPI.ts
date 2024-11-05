@@ -3,8 +3,6 @@ import dayjs from 'dayjs';
 export const getPost = (page: number = 1, perPage: number = 9) => {
     const referenceDate = dayjs('2017-10-22');
     const formattedDate = referenceDate.format('YYYY-MM-DD');
-    const daysFromReference = dayjs().diff(referenceDate, 'days');
-    console.log(`Fetching repositories from ${daysFromReference} days ago`);
 
     return axios.get(`https://api.github.com/search/repositories`, {
         params: {
