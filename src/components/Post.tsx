@@ -8,6 +8,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import ClassicLoader from "./ClassicLoader";
 
 dayjs.extend(relativeTime);
 
@@ -26,20 +27,26 @@ interface Repository {
 
 const Post = (): JSX.Element => {
   const [data, setData] = useState<Repository[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(null);
   const itemsPerPage = 9;
   const getPostData = async (page: number): Promise<void> => {
-    const res = await getPost({
-      page,
-      perPage: itemsPerPage,
-      startDate: selectedDate,
-    });
-    setData(res.data.items);
-    setTotalPages(Math.ceil(res.data.total_count / itemsPerPage));
-  };
-  useEffect(() => {
+    setIsLoading(true);
+    try {
+      const res = await getPost({
+        page,
+        perPage: itemsPerPage,
+        startDate: selectedDate,
+      });
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      setData(res.data.items);
+      setTotalPages(Math.ceil(res.data.total_count / itemsPerPage));
+    } finally {
+      setIsLoading(false);
+    }
+  };  useEffect(() => {
     getPostData(currentPage);
   }, [currentPage, selectedDate]);
 
@@ -59,8 +66,13 @@ const Post = (): JSX.Element => {
           GitHub Repositories
         </h2>
 
-        <div className="flex justify-center mb-6">
-          <h2 className="text-xl font-semibold text-gray-700">Select :</h2>
+        <div className="flex justify-center items-center gap-6 mb-8 bg-gradient-to-r from-blue-50 to-white p-6 rounded-xl shadow-lg max-w-md mx-auto border border-blue-100">
+          <h2 className="text-xl font-semibold text-gray-700 flex items-center">
+            <span className="bg-blue-500 w-1.5 h-8 rounded-full mr-3"></span>
+            <span className="bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
+              Select Date :
+            </span>
+          </h2>
           <DatePicker
             selected={selectedDate}
             onChange={(date: Date | null) => {
@@ -70,88 +82,140 @@ const Post = (): JSX.Element => {
               }
             }}
             dateFormat="yyyy-MM-dd"
-            className="p-2 border rounded"
+            className="px-4 py-2.5 text-gray-700 bg-white border-2 border-blue-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent hover:border-blue-300 transition-all duration-300 cursor-pointer font-medium text-center min-w-[150px]"
+            placeholderText="Pick a date"
           />
         </div>
+        {isLoading ? (
 
-        <ul className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {data.map((repo) => (
-            <li
-              key={repo.id}
-              className="bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition duration-300"
+          <div className="flex justify-center items-center min-h-[400px] text-blue-500">
+            {/* Loader used syntax ui here so that when searching is done 
+            it will show the loader */}
+            <ClassicLoader />
+          </div>
+        ) : (
+          <ul className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {data.map((repo) => (
+              <li
+                key={repo.id}
+                className="bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition duration-300"
+              >
+                <div className="grid gap-3">
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={repo.owner.avatar_url}
+                      alt={`${repo.owner.login}'s avatar`}
+                      className="w-16 h-16 rounded-full"
+                    />
+                    <h3 className="text-xl font-semibold text-gray-800">
+                      {repo.name}
+                    </h3>
+                  </div>
+
+                  <p className="text-gray-600 line-clamp-2">{repo.description}</p>
+
+                  <div className="flex items-center justify-start gap-6">
+                    <div className="flex items-center">
+                      <FaStar className="text-yellow-400 w-5 h-5" />
+                      <span className="ml-1 text-gray-700">
+                        {repo.stargazers_count}
+                      </span>
+                    </div>
+                    <div className="flex items-center">
+                      <GoIssueClosed className="text-green-600 w-5 h-5" />
+                      <span className="ml-1 text-gray-700">
+                        {repo.open_issues_count}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center text-sm text-gray-600">
+                    <BiTime className="w-4 h-4 mr-1" />
+                    <span>Created: {formatDate(repo.created_at)}</span>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+
+{/* I have addedd the conditional rendering here 
+so that when the data is loaded it will show the pagination */}
+        {data.length > 0 && (
+          <div className="mt-8 flex justify-center gap-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-4 py-2 rounded bg-blue-500 text-white disabled:bg-gray-300 hover:bg-blue-600 transition"
             >
-              <div className="grid gap-3">
-                <div className="flex items-center gap-4">
-                  <img
-                    src={repo.owner.avatar_url}
-                    alt={`${repo.owner.login}'s avatar`}
-                    className="w-16 h-16 rounded-full"
-                  />
-                  <h3 className="text-xl font-semibold text-gray-800">
-                    {repo.name}
-                  </h3>
-                </div>
+              <IoIosArrowBack />
+            </button>
 
-                <p className="text-gray-600 line-clamp-2">{repo.description}</p>
+            <button
+              onClick={() => handlePageChange(1)}
+              className={`px-4 py-2 rounded ${
+                currentPage === 1
+                  ? "bg-blue-500 text-white"
+                  : "bg-white text-blue-500 hover:bg-blue-100"
+              }`}
+            >
+              1
+            </button>
 
-                <div className="flex items-center justify-start gap-6">
-                  <div className="flex items-center">
-                    <FaStar className="text-yellow-400 w-5 h-5" />
-                    <span className="ml-1 text-gray-700">
-                      {repo.stargazers_count}
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <GoIssueClosed className="text-green-600 w-5 h-5" />
-                    <span className="ml-1 text-gray-700">
-                      {repo.open_issues_count}
-                    </span>
-                  </div>
-                </div>
+            
+            {currentPage > 3 && <span className="px-4 py-2">...</span>}
 
-                <div className="flex items-center text-sm text-gray-600">
-                  <BiTime className="w-4 h-4 mr-1" />
-                  <span>Created: {formatDate(repo.created_at)}</span>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+            {[...Array(totalPages)].map((_, index) => {
+              const pageNumber = index + 1;
+              if (
+                pageNumber !== 1 &&
+                pageNumber !== totalPages &&
+                pageNumber >= currentPage - 1 &&
+                pageNumber <= currentPage + 1
+              ) {
+                return (
+                  <button
+                    key={index}
+                    onClick={() => handlePageChange(pageNumber)}
+                    className={`px-4 py-2 rounded ${
+                      currentPage === pageNumber
+                        ? "bg-blue-500 text-white"
+                        : "bg-white text-blue-500 hover:bg-blue-100"
+                    }`}
+                  >
+                    {pageNumber}
+                  </button>
+                );
+              }
+              return null;
+            })}
+            {currentPage < totalPages - 2 && (
+              <span className="px-4 py-2">...</span>
+            )}
 
-        <div className="mt-8 flex justify-center gap-2">
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="px-4 py-2 rounded bg-blue-500 text-white disabled:bg-gray-300 hover:bg-blue-600 transition"
-          >
-            <IoIosArrowBack />
-          </button>
-
-          {[...Array(totalPages)].map((_, index) => {
-            const pageNumber = index + 1;
-            return (
+            {totalPages > 1 && (
               <button
-                key={index}
-                onClick={() => handlePageChange(pageNumber)}
+                onClick={() => handlePageChange(totalPages)}
                 className={`px-4 py-2 rounded ${
-                  currentPage === pageNumber
+                  currentPage === totalPages
                     ? "bg-blue-500 text-white"
                     : "bg-white text-blue-500 hover:bg-blue-100"
                 }`}
               >
-                {pageNumber}
+                {totalPages}
               </button>
-            );
-          })}
+            )}
 
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="px-4 py-2 rounded bg-blue-500 text-white disabled:bg-gray-300 hover:bg-blue-600 transition"
-          >
-            <IoIosArrowForward />
-          </button>
-        </div>
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 rounded bg-blue-500 text-white disabled:bg-gray-300 hover:bg-blue-600 transition"
+            >
+              <IoIosArrowForward />
+            </button>
+          </div>
+        )}
       </section>
     </div>
   );
