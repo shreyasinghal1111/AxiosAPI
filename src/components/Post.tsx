@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { getPost } from "../api/PostAPI";
 import { FaStar } from "react-icons/fa";
@@ -9,6 +11,7 @@ import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import ClassicLoader from "./ClassicLoader";
+import { convertDate } from "../utils/datepicker";
 
 dayjs.extend(relativeTime);
 
@@ -30,24 +33,39 @@ const Post = (): JSX.Element => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedDate, setSelectedDate] = useState<any>(null);
   const itemsPerPage = 9;
-  const getPostData = async (page: number): Promise<void> => {
+  const getPostData = async ({
+    page = 1,
+    perPage = 25,
+  }: {
+    page: number;
+    perPage: number;
+  }): Promise<void> => {
     setIsLoading(true);
+    const formattedDate = convertDate(selectedDate);
+
+    const payLoad = {
+      ...(selectedDate
+        ? { q: `created:>${formattedDate} stars:>10000` }
+        : { q: null }),
+      sort: "stars",
+      order: "desc",
+      page,
+      per_page: perPage,
+    };
     try {
-      const res = await getPost({
-        page,
-        perPage: itemsPerPage,
-        startDate: selectedDate,
-      });
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      const res = await getPost(payLoad);
+
+      await new Promise((resolve) => setTimeout(resolve, 3000));
       setData(res.data.items);
       setTotalPages(Math.ceil(res.data.total_count / itemsPerPage));
     } finally {
       setIsLoading(false);
     }
-  };  useEffect(() => {
-    getPostData(currentPage);
+  };
+  useEffect(() => {
+    getPostData({ page: currentPage, perPage: itemsPerPage });
   }, [currentPage, selectedDate]);
 
   const handlePageChange = (page: number) => {
@@ -66,11 +84,11 @@ const Post = (): JSX.Element => {
           GitHub Repositories
         </h2>
 
-        <div className="flex justify-center items-center gap-6 mb-8 bg-gradient-to-r from-blue-50 to-white p-6 rounded-xl shadow-lg max-w-md mx-auto border border-blue-100">
-          <h2 className="text-xl font-semibold text-gray-700 flex items-center">
-            <span className="bg-blue-500 w-1.5 h-8 rounded-full mr-3"></span>
+        <div className="flex justify-center items-center gap-3 mb-5 bg-gradient-to-r from-blue-50 to-white p-2 rounded-xl shadow-lg max-w-sm mx-auto border border-blue-100">
+          <h2 className="text-sm font-semibold text-gray-700 flex items-center">
+            <span className="bg-blue-500 w-1.5 h-8 rounded-full mr-2"></span>
             <span className="bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
-              Select Date :
+              Select Date
             </span>
           </h2>
           <DatePicker
@@ -78,16 +96,15 @@ const Post = (): JSX.Element => {
             onChange={(date: Date | null) => {
               if (date) {
                 setSelectedDate(date);
-                getPostData(currentPage);
+                getPostData({ page: currentPage, perPage: itemsPerPage });
               }
             }}
             dateFormat="yyyy-MM-dd"
-            className="px-4 py-2.5 text-gray-700 bg-white border-2 border-blue-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent hover:border-blue-300 transition-all duration-300 cursor-pointer font-medium text-center min-w-[150px]"
+            className="px-2 py-2 text-gray-700 bg-white border-2 border-blue-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent hover:border-blue-300 transition-all duration-300 cursor-pointer font-normal text-center min-w-[80px]"
             placeholderText="Pick a date"
           />
         </div>
         {isLoading ? (
-
           <div className="flex justify-center items-center min-h-[400px] text-blue-500">
             {/* Loader used syntax ui here so that when searching is done 
             it will show the loader */}
@@ -112,7 +129,9 @@ const Post = (): JSX.Element => {
                     </h3>
                   </div>
 
-                  <p className="text-gray-600 line-clamp-2">{repo.description}</p>
+                  <p className="text-gray-600 line-clamp-2">
+                    {repo.description}
+                  </p>
 
                   <div className="flex items-center justify-start gap-6">
                     <div className="flex items-center">
@@ -139,8 +158,8 @@ const Post = (): JSX.Element => {
           </ul>
         )}
 
-{/* I have addedd the conditional rendering here 
-so that when the data is loaded it will show the pagination */}
+        {/* I have added the conditional rendering here 
+so that when the data is loaded only then it will show the pagination */}
         {data.length > 0 && (
           <div className="mt-8 flex justify-center gap-2">
             <button
@@ -162,7 +181,6 @@ so that when the data is loaded it will show the pagination */}
               1
             </button>
 
-            
             {currentPage > 3 && <span className="px-4 py-2">...</span>}
 
             {[...Array(totalPages)].map((_, index) => {
@@ -205,7 +223,6 @@ so that when the data is loaded it will show the pagination */}
                 {totalPages}
               </button>
             )}
-
 
             <button
               onClick={() => handlePageChange(currentPage + 1)}
